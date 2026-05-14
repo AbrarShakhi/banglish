@@ -22,6 +22,7 @@ add_compile_definitions(_POSIX_C_SOURCE=200809L)
 file(GLOB_RECURSE LIB_SOURCES
     "src/utils/*.c"
     "src/core/*.c"
+    "src/lexer/*.c"
     "src/exec/*.c"
     "src/builtin/*.c"
     "src/info/*.c"
