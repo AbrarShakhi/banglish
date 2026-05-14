@@ -20,3 +20,6 @@ typedef struct JobTable {
 	Job *head;
 	int next_jid;
 } JobTable;
+
+JobTable *jobtable_create(void);
+void jobtable_destroy(JobTable *jt);
