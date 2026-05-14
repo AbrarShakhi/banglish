@@ -1,6 +1,6 @@
 # banglish
 
-*PROJECT IS UNDER DEVELOPMENT*. A linux shell written in C. It might not ru right now.
+*PROJECT IS UNDER DEVELOPMENT*. A linux shell written in C. It might not run right now.
 
 ---
 
