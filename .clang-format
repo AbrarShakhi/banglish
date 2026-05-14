@@ -18,7 +18,7 @@ AllowShortLoopsOnASingleLine              : false
 # Cpp11BracedListStyle                      : true
 # DerivePointerAlignment                    : true
 # DerivePointerBinding                      : false
-IndentWidth                               : 4
+IndentWidth                               : 2
 # KeepEmptyLinesAtTheStartOfBlocks          : true
 MaxEmptyLinesToKeep                       : 2
 # NamespaceIndentation                      : All 
