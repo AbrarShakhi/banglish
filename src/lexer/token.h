@@ -40,3 +40,4 @@ typedef struct {
 
 Token *token_new(TokenType type, const char *value, int line, int col);
 void token_destroy(Token *tok);
+const char *token_type_name(TokenType type); /* for debug */
