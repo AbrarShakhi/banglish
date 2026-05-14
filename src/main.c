@@ -7,8 +7,6 @@
 #include "core/shell.h"
 #include "core/signal.h"
 #include "exec/eval.h"
-#include "prompt/prompt.h"
-#include "utils/memory.h"
 
 /* ------------------------------------------------------------------ */
 /* main                                                                */
@@ -41,7 +39,7 @@ int main(int argc, char **argv) {
     }
     sh->script_argc = argc - arg_idx;
     sh->script_argv = argv + arg_idx;
-    int status = -999; // TODO:Run the strinng here
+    int status = eval_string(sh, argv[arg_idx]);
     shell_destroy(sh);
     return status;
   }
@@ -51,7 +49,8 @@ int main(int argc, char **argv) {
     sh->interactive = 0;
     sh->script_argc = argc - arg_idx;
     sh->script_argv = argv + arg_idx;
-    int status = -999; // TODO:Run the file here
+    signals_init_script();
+    int status = eval_file(sh, argv[arg_idx]);
     shell_destroy(sh);
     return status;
   }
@@ -60,7 +59,6 @@ int main(int argc, char **argv) {
   sh->interactive = isatty(STDIN_FILENO);
 
   if (sh->interactive) {
-
     const char *home = getenv("HOME");
     if (home) {
       char rc[PATH_MAX];
