@@ -14,3 +14,4 @@ typedef struct {
 
 EnvTable *env_create(void);
 void env_destroy(EnvTable *et);
+const char *env_get(EnvTable *et, const char *name);
