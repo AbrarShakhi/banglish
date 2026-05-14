@@ -1,9 +1,9 @@
 #pragma once
 
 typedef struct {
-	void **data;
-	int count;
-	int cap;
+  void **data;
+  int count;
+  int cap;
 } Vec;
 
 Vec *vec_create(void);
