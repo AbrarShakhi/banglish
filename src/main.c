@@ -1,25 +1,23 @@
-#include <signal.h>
-#include <stdbool.h>
+#include <limits.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 
-#include "banglish.h"
+#include "core/shell.h"
+#include "core/signal.h"
+#include "exec/eval.h"
+#include "prompt/prompt.h"
+#include "utils/memory.h"
 
+/* ------------------------------------------------------------------ */
+/* main                                                                */
+/* ------------------------------------------------------------------ */
 
-void handle_sigint() {}
+int main(int argc, char **argv) {
+  ShellState *sh = shell_init(argc, argv);
 
-int main(int argc, char const *argv[]) {
-	signal(SIGINT, handle_sigint);
-
-	int status = 0;
-	while (true) {
-		show_prompt(status);
-		char *user_input = get_prompt();
-		fflush(stdin);
-
-		char **statements = parseargs(user_input);
-		execute_cmds(statements, &status);
-
-		free_ifnotnull_and_setnull(statements);
-		free_ifnotnull_and_setnull(user_input);
-	}
+  int final = sh->last_status;
+  shell_destroy(sh);
+  return final;
 }
