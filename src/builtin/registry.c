@@ -13,7 +13,6 @@
 #include "source.h"
 #include "type_cmd.h"
 #include "unset.h"
-#include "utils/memory.h"
 #include "which_cmd.h"
 
 typedef struct {
@@ -47,7 +46,7 @@ void builtins_register_all(void) {
 
 BuiltinFn builtin_find(const char *name) {
   for (int i = 0; g_builtins[i].name; i++)
-	if (strcmp(g_builtins[i].name, name) == 0)
-	  return g_builtins[i].fn;
+    if (strcmp(g_builtins[i].name, name) == 0)
+      return g_builtins[i].fn;
   return NULL;
 }

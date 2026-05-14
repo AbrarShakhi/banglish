@@ -1,32 +1,79 @@
-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-
-Language                                  : Cpp
-BasedOnStyle                              : Google
-Standard                                  : Auto
-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-
-# AccessModifierOffset                      : -4
-AlignTrailingComments                     : true
-# AllowAllParametersOfDeclarationOnNextLine : false
-# AllowShortBlocksOnASingleLine             : true
-# AllowShortFunctionsOnASingleLine          : true
-AllowShortIfStatementsOnASingleLine       : false
-AllowShortLoopsOnASingleLine              : false
-# BinPackParameters                         : false
-# BreakBeforeBraces                         : Allman
-# BreakBeforeTernaryOperators               : false
-# BreakConstructorInitializersBeforeComma   : true
-# ColumnLimit                               : 120 
-# Cpp11BracedListStyle                      : true
-# DerivePointerAlignment                    : true
-# DerivePointerBinding                      : false
-IndentWidth                               : 2
-# KeepEmptyLinesAtTheStartOfBlocks          : true
-MaxEmptyLinesToKeep                       : 2
-# NamespaceIndentation                      : All 
-PointerBindsToType                        : true
-# SpacesBeforeTrailingComments              : 1
-# SpacesInAngles                            : false
-# SpacesInSquareBrackets                    : false
-TabWidth                                  : 4
-UseTab                                    : ForIndentation
-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-
-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-
+Language:        Cpp
+
+# Base style
+BasedOnStyle: LLVM
+
+# Indentation
+IndentWidth:     2
+TabWidth:        2
+UseTab:          Never
+ContinuationIndentWidth: 2
+
+# Line length
+ColumnLimit:     100
+
+# Braces
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterCaseLabel:  false
+  AfterClass:      false
+  AfterControlStatement: Always
+  AfterEnum:       false
+  AfterFunction:   true
+  AfterStruct:     false
+  AfterUnion:      false
+  BeforeCatch:     true
+  BeforeElse:      true
+  IndentBraces:    false
+  SplitEmptyFunction: false
+  SplitEmptyRecord: false
+  SplitEmptyNamespace: false
+
+# Function formatting
+AllowShortFunctionsOnASingleLine: Empty
+AlwaysBreakAfterReturnType: None
+BinPackParameters: false
+BinPackArguments: false
+
+# Control statements
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+
+# Spaces
+SpaceBeforeParens: ControlStatements
+SpaceInEmptyParentheses: false
+SpacesInParentheses: false
+SpacesInSquareBrackets: false
+SpaceBeforeAssignmentOperators: true
+
+# Pointer alignment (important in C)
+PointerAlignment: Right
+
+# Switch/case
+IndentCaseLabels: true
+IndentCaseBlocks: true
+
+# Includes
+SortIncludes: true
+IncludeBlocks: Preserve
+
+# Comments
+ReflowComments: true
+AlignTrailingComments: true
+
+# Empty lines
+KeepEmptyLinesAtTheStartOfBlocks: false
+MaxEmptyLinesToKeep: 1
+
+# Arrays and structs
+AlignArrayOfStructures: Left
+
+# Macros
+IndentPPDirectives: None
+
+# Penalties (improves wrapping behavior)
+PenaltyBreakBeforeFirstCallParameter: 100
+PenaltyReturnTypeOnItsOwnLine: 200
+
+# C-specific behavior
+Standard: c17
