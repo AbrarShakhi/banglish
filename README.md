@@ -1,45 +1,84 @@
-# Bang-Lish
+# banglish
 
-Linux shell in C
+*PROJECT IS UNDER DEVELOPMENT*. A linux shell written in C. It might not ru right now.
 
-### PROJECT IS UNDER DEVLOPMENT
+---
 
-## Build and test this project
+### Built-in Commands
 
-Install build dependencies
+| Command | Description |
+|---------|-------------|
+| `cd [DIR]` | Change directory (`-` for previous) |
+| `echo [-n] ...` | Print arguments |
+| `exit [CODE]` | Exit the shell |
+| `pwd` | Print working directory |
+| `jobs` | List background jobs |
+| `fg [%N]` | Bring job to foreground |
+| `bg [%N]` | Resume stopped job in background |
+| `source FILE` | Execute file in current shell |
+| `export NAME` | Export variable to environment |
+| `unset NAME` | Remove shell variable |
+| `alias [name=val]` | Define or list aliases |
+| `unalias NAME` | Remove alias |
+| `type NAME` | Show type (builtin / function / external) |
+| `which CMD` | Show full path of command |
+| `history [N]` | Show last N history entries |
+| `help` | List all builtins |
+
+---
+
+## Building
+
+### Dependencies
+
+| Package | Purpose |
+|---------|---------|
+| `gcc` | C17 compiler |
+| `cmake` | Build system (>= 3.16) |
+| `make` | Build runner |
+| `libreadline-dev` | Line editing and history |
+| `libncurses-dev` | Terminal support (readline dependency) |
+
+Install on Ubuntu/Debian:
 
 ```sh
-sudo apt install gcc cmake make # On Ubuntu
+sudo apt install gcc cmake make libreadline-dev libncurses-dev
 ```
 
-Clone this repo and open this project
+### Build
 
 ```sh
-git clone https://github.com/abrarshakhi/bang-lish.git
+git clone https://github.com/AbrarShakhi/bang-lish.git
 cd bang-lish
-```
-
-Create a build dir if not exists and open it
-
-```sh
-mkdir build
-```
-
-then do
-
-```sh
 cmake -B build
+make -C build -j$(nproc)
 ```
 
-if succesfull the do
+The binary is at `./build/banglish`.
+
+### Install system-wide
 
 ```sh
-make -C build
+sudo make -C build install   # installs to /usr/local/bin/banglish
 ```
 
-there should be a executable file named `banglish` onn build dir, Run it
+---
+
+## Usage
 
 ```sh
+# Interactive shell
 ./build/banglish
+
+# Run a script file
+./build/banglish script.bl
+
+# Run a command string
+./build/banglish -c "echo hello | tr a-z A-Z"
 ```
 
+---
+
+## License
+
+See [LICENSE](LICENSE).
