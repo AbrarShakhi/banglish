@@ -15,7 +15,9 @@ void aliastable_destroy(AliasTable *at) {
   AliasEntry *e = at->head;
   while (e) {
     AliasEntry *next = e->next;
-
+    mem_free(e->name);
+    mem_free(e->value);
+    mem_free(e);
     e = next;
   }
   mem_free(at);
