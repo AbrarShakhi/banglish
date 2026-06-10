@@ -23,8 +23,11 @@ file(GLOB_RECURSE LIB_SOURCES
     "src/utils/*.c"
     "src/core/*.c"
     "src/lexer/*.c"
+    "src/parser/*.c"
+    "src/expand/*.c"
     "src/exec/*.c"
     "src/builtin/*.c"
+    "src/prompt/*.c"
     "src/info/*.c"
     "src/scripting/*.c"
 )

@@ -124,6 +124,42 @@ sudo make -C build install   # installs to /usr/local/bin/banglish
 ./build/banglish -c "echo hello | tr a-z A-Z"
 ```
 
+### Startup file
+
+On interactive launch, the shell sources `~/.banglishrc` if it exists:
+
+```bl
+# ~/.banglishrc
+alias ll = 'ls -la'
+
+let EDITOR = "nvim"
+export EDITOR
+
+def mkcd(dir) {
+    mkdir -p $dir
+    cd $dir
+}
+```
+
+---
+
+## Project Structure
+
+```
+src/
+├── main.c              # Entry point: REPL, script mode, -c mode
+├── core/               # ShellState, environment table, signal handlers
+├── lexer/              # Tokenizer: words, operators, quotes, $(...), heredoc
+├── parser/             # Recursive-descent parser → AST
+├── expand/             # Word expansion: tilde, $VAR, $(cmd), glob, quotes
+├── exec/               # eval, pipeline, redirection, job control
+├── builtin/            # All built-in commands + registry
+├── prompt/             # Readline integration, tab completion, prompt string
+├── scripting/          # Function table (def/call)
+├── info/               # username, hostname, cwd helpers
+└── utils/              # memory, string, growable vector
+```
+
 ---
 
 ## License
