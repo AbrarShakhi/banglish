@@ -21,3 +21,10 @@ typedef struct {
 
 Parser *parser_create(Lexer *lx, struct ShellState *sh);
 void parser_destroy(Parser *p);
+
+/* Parse one logical line (interactive). Returns PARSE_OK with *out_node set,
+   PARSE_EOF if nothing to parse, PARSE_INCOMPLETE, or PARSE_ERROR. */
+ParseResult parse_line(Parser *p, AstNode **out_node);
+
+/* Parse an entire script (all statements until EOF). */
+AstNode *parse_script(Parser *p);

@@ -1,7 +1,6 @@
 #include "lexer.h"
 #include "utils/memory.h"
 #include "utils/vec.h"
-#include <cstddef>
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -25,6 +24,14 @@ void lexer_destroy(Lexer *lx) {
   mem_free(lx);
 }
 
+static char lx_peek_char(const Lexer *lx) {
+  return lx->pos < lx->len ? lx->input[lx->pos] : '\0';
+}
+
+static char lx_peek_char_at(const Lexer *lx, size_t offset) {
+  return offset < lx->len ? lx->input[offset] : '\0';
+}
+
 static char lx_advance(Lexer *lx) {
   char c = lx->input[lx->pos++];
   if (c == '\n') {
@@ -36,15 +43,180 @@ static char lx_advance(Lexer *lx) {
   return c;
 }
 
-/* Skip spaces and tabs. */
+/* Skip spaces and tabs (NOT newlines — they're meaningful). */
 static void lx_skip_spaces(Lexer *lx) {
   while (lx->pos < lx->len) {
-    char c = lx->input[lx->pos];
-    if (c == ' ' || c == '\t')
+    char c = lx_peek_char(lx);
+    if (c == ' ' || c == '\t' || c == '\r')
       lx_advance(lx);
     else
       break;
   }
+}
+
+/* Collect a word token, handling quotes, escapes, and $(…) / ${…}.
+   Stops at whitespace or an unquoted operator character. */
+static Token *lex_word(Lexer *lx) {
+  int save_line = lx->line;
+  int save_col = lx->col;
+  Vec *buf = vec_create();
+
+#define BUF_PUSH(c)                                                            \
+  do {                                                                         \
+    char *ch = mem_alloc(1);                                                   \
+    *ch = (c);                                                                 \
+    vec_push(buf, ch);                                                         \
+  } while (0)
+
+  while (lx->pos < lx->len) {
+    char c = lx_peek_char(lx);
+
+    if (c == '\\') {
+      /* Escape: keep both \ and next char so expand can handle quoting/glob */
+      lx_advance(lx);
+      if (lx->pos < lx->len) {
+        char escaped = lx_peek_char(lx);
+        if (escaped == '\n') {
+          /* Line continuation: skip newline, continue word */
+          lx_advance(lx);
+        } else {
+          BUF_PUSH('\\');
+          BUF_PUSH(lx_advance(lx));
+        }
+      }
+      continue;
+    }
+
+    if (c == '\'') {
+      /* Single-quote: everything literal until closing ' */
+      lx_advance(lx); /* consume opening ' */
+      BUF_PUSH('\'');
+      while (lx->pos < lx->len) {
+        char sc = lx_advance(lx);
+        BUF_PUSH(sc);
+        if (sc == '\'')
+          break;
+      }
+      continue;
+    }
+
+    if (c == '"') {
+      /* Double-quote: allow $ and \ expansion, but treat as single word */
+      lx_advance(lx); /* consume opening " */
+      BUF_PUSH('"');
+      while (lx->pos < lx->len) {
+        char dc = lx_peek_char(lx);
+        if (dc == '"') {
+          lx_advance(lx);
+          BUF_PUSH('"');
+          break;
+        }
+        if (dc == '\\') {
+          lx_advance(lx);
+          if (lx->pos < lx->len) {
+            char ec = lx_advance(lx);
+            BUF_PUSH('\\');
+            BUF_PUSH(ec);
+          }
+          continue;
+        }
+        BUF_PUSH(lx_advance(lx));
+      }
+      continue;
+    }
+
+    if (c == '$') {
+      /* Pass $VAR, ${…}, $(...) raw into the word; expand module handles it */
+      BUF_PUSH(lx_advance(lx)); /* the $ */
+      char nc = lx_peek_char(lx);
+      if (nc == '{') {
+        /* ${…}: collect until matching } */
+        BUF_PUSH(lx_advance(lx));
+        int depth = 1;
+        while (lx->pos < lx->len && depth > 0) {
+          char bc = lx_advance(lx);
+          BUF_PUSH(bc);
+          if (bc == '{')
+            depth++;
+          else if (bc == '}')
+            depth--;
+        }
+      } else if (nc == '(') {
+        /* $(…): collect until matching ) */
+        BUF_PUSH(lx_advance(lx));
+        int depth = 1;
+        while (lx->pos < lx->len && depth > 0) {
+          char pc = lx_peek_char(lx);
+          if (pc == '\'') {
+            /* single-quoted inside $(): pass raw */
+            BUF_PUSH(lx_advance(lx));
+            while (lx->pos < lx->len) {
+              char sq = lx_advance(lx);
+              BUF_PUSH(sq);
+              if (sq == '\'')
+                break;
+            }
+          } else if (pc == '"') {
+            BUF_PUSH(lx_advance(lx));
+            while (lx->pos < lx->len) {
+              char dq = lx_advance(lx);
+              BUF_PUSH(dq);
+              if (dq == '"')
+                break;
+            }
+          } else if (pc == '\\') {
+            BUF_PUSH(lx_advance(lx));
+            if (lx->pos < lx->len)
+              BUF_PUSH(lx_advance(lx));
+          } else {
+            char rc = lx_advance(lx);
+            BUF_PUSH(rc);
+            if (rc == '(')
+              depth++;
+            else if (rc == ')')
+              depth--;
+          }
+        }
+      } else {
+        /* $NAME or $? etc.: consume identifier chars */
+        while (lx->pos < lx->len) {
+          char vc = lx_peek_char(lx);
+          if (isalnum((unsigned char)vc) || vc == '_' || vc == '?' ||
+              vc == '#' || vc == '@' || vc == '*' || vc == '0')
+            BUF_PUSH(lx_advance(lx));
+          else
+            break;
+        }
+      }
+      continue;
+    }
+
+    /* Stop on unquoted operator chars or whitespace */
+    if (c == ' ' || c == '\t' || c == '\r' || c == '\n')
+      break;
+    if (c == '|' || c == '&' || c == ';' || c == '<' || c == '>')
+      break;
+    if (c == '(' || c == ')' || c == '{' || c == '}')
+      break;
+    if (c == '#')
+      break; /* comment */
+
+    BUF_PUSH(lx_advance(lx));
+  }
+
+  /* Build the word string from buf */
+  size_t word_len = (size_t)buf->count;
+  char *word = mem_alloc(word_len + 1);
+  for (int i = 0; i < buf->count; i++) {
+    word[i] = *(char *)buf->data[i];
+    mem_free(buf->data[i]);
+  }
+  word[word_len] = '\0';
+  vec_destroy(buf);
+
+#undef BUF_PUSH
+
+  return token_new(TOK_WORD, word, save_line, save_col);
 }
 
 Token *lexer_next(Lexer *lx) {
@@ -62,11 +234,11 @@ Token *lexer_next(Lexer *lx) {
   if (lx->pos >= lx->len)
     return token_new(TOK_EOF, NULL, save_line, save_col);
 
-  char c = lx->input[lx->pos];
+  char c = lx_peek_char(lx);
 
   /* Comment: skip to end of line */
   if (c == '#') {
-    while (lx->pos < lx->len && lx->input[lx->pos] != '\n')
+    while (lx->pos < lx->len && lx_peek_char(lx) != '\n')
       lx_advance(lx);
     return lexer_next(lx); /* recurse to get next real token */
   }
@@ -103,18 +275,42 @@ Token *lexer_next(Lexer *lx) {
 
   /* Pipe: |, ||, |& */
   if (c == '|') {
-    // TODO: PIPING MACHANISM
+    lx_advance(lx);
+    char nc = lx_peek_char(lx);
+    if (nc == '|') {
+      lx_advance(lx);
+      return token_new(TOK_OR, NULL, save_line, save_col);
+    }
+    if (nc == '&') {
+      lx_advance(lx);
+      return token_new(TOK_PIPE_ERR, NULL, save_line, save_col);
+    }
+    return token_new(TOK_PIPE, NULL, save_line, save_col);
   }
 
   /* Ampersand: &, &&, &>, &>> */
   if (c == '&') {
-    // TODO: Condition
+    lx_advance(lx);
+    char nc = lx_peek_char(lx);
+    if (nc == '&') {
+      lx_advance(lx);
+      return token_new(TOK_AND, NULL, save_line, save_col);
+    }
+    if (nc == '>') {
+      lx_advance(lx);
+      if (lx_peek_char(lx) == '>') {
+        lx_advance(lx);
+        return token_new(TOK_REDIR_BOTH_APPEND, NULL, save_line, save_col);
+      }
+      return token_new(TOK_REDIR_BOTH, NULL, save_line, save_col);
+    }
+    return token_new(TOK_AMP, NULL, save_line, save_col);
   }
 
   /* Input redirect: <, << */
   if (c == '<') {
     lx_advance(lx);
-    if (lx->input[lx->pos] == '<') {
+    if (lx_peek_char(lx) == '<') {
       lx_advance(lx);
       return token_new(TOK_HEREDOC, NULL, save_line, save_col);
     }
@@ -124,7 +320,7 @@ Token *lexer_next(Lexer *lx) {
   /* Output redirect: >, >> */
   if (c == '>') {
     lx_advance(lx);
-    if (lx->input[lx->pos] == '>') {
+    if (lx_peek_char(lx) == '>') {
       lx_advance(lx);
       return token_new(TOK_REDIR_APPEND, NULL, save_line, save_col);
     }
@@ -132,12 +328,12 @@ Token *lexer_next(Lexer *lx) {
   }
 
   /* 2> and 2>>: digit followed immediately by > */
-  if (isdigit((unsigned char)c) && lx->input[lx->pos] == '>') {
+  if (isdigit((unsigned char)c) && lx_peek_char_at(lx, lx->pos + 1) == '>') {
     /* For now only handle fd 2 specially; others fall through to word */
     if (c == '2') {
       lx_advance(lx); /* consume '2' */
       lx_advance(lx); /* consume '>' */
-      if (lx->input[lx->pos] == '>') {
+      if (lx_peek_char(lx) == '>') {
         lx_advance(lx);
         return token_new(TOK_REDIR_ERR_APPEND, NULL, save_line, save_col);
       }
@@ -146,7 +342,7 @@ Token *lexer_next(Lexer *lx) {
   }
 
   /* Everything else is a word */
-  Token *w = NULL; // lexer word will create this
+  Token *w = lex_word(lx);
   /* An empty word means we hit something unexpected; return it anyway */
   return w;
 }
