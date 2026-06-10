@@ -1,8 +1,55 @@
 # banglish
 
-*PROJECT IS UNDER DEVELOPMENT*. A linux shell written in C. It might not ru right now.
+*PROJECT IS UNDER DEVELOPMENT*. A linux shell written in C. It might not run right now.
 
 ---
+
+## Features
+
+- **Interactive REPL** — colored prompt showing exit status, user, host, and working directory
+- **Readline** — line editing, persistent history (`~/.banglish_history`), tab completion
+- **Pipes & redirection** — `|`, `|&`, `>`, `>>`, `<`, `2>`, `2>>`, `&>`, `&>>`, `2>&1`, heredoc (`<<`)
+- **Job control** — background jobs (`&`), `jobs`, `fg`, `bg`, Ctrl+Z
+- **Word expansion** — tilde, `$VAR`, `${VAR}`, `$(cmd)`, glob (`*`, `?`, `[...]`), quote removal
+- **Operators** — `&&`, `||`, `;`
+- **Startup file** — sources `~/.banglishrc` on interactive launch
+- **Script mode** — `banglish script.bl` or `banglish -c "cmd"`
+
+### Banglish Scripting Syntax
+
+```bl
+# Variables
+let name = "World"
+let count = 42
+
+# Export to environment
+export name
+
+# Functions  (Go-style: { on same line)
+def greet(person) {
+    echo "Hello, $person!"
+}
+greet $name
+
+# If / elif / else
+if test $count -gt 10 {
+    echo "big"
+} elif test $count -gt 5 {
+    echo "medium"
+} else {
+    echo "small"
+}
+
+# While loop
+while test $count -gt 0 {
+    let count = $(expr $count - 1)
+}
+
+# For loop
+for f in *.c {
+    echo $f
+}
+```
 
 ### Built-in Commands
 
@@ -75,6 +122,42 @@ sudo make -C build install   # installs to /usr/local/bin/banglish
 
 # Run a command string
 ./build/banglish -c "echo hello | tr a-z A-Z"
+```
+
+### Startup file
+
+On interactive launch, the shell sources `~/.banglishrc` if it exists:
+
+```bl
+# ~/.banglishrc
+alias ll = 'ls -la'
+
+let EDITOR = "nvim"
+export EDITOR
+
+def mkcd(dir) {
+    mkdir -p $dir
+    cd $dir
+}
+```
+
+---
+
+## Project Structure
+
+```
+src/
+├── main.c              # Entry point: REPL, script mode, -c mode
+├── core/               # ShellState, environment table, signal handlers
+├── lexer/              # Tokenizer: words, operators, quotes, $(...), heredoc
+├── parser/             # Recursive-descent parser → AST
+├── expand/             # Word expansion: tilde, $VAR, $(cmd), glob, quotes
+├── exec/               # eval, pipeline, redirection, job control
+├── builtin/            # All built-in commands + registry
+├── prompt/             # Readline integration, tab completion, prompt string
+├── scripting/          # Function table (def/call)
+├── info/               # username, hostname, cwd helpers
+└── utils/              # memory, string, growable vector
 ```
 
 ---

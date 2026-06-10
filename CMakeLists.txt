@@ -22,8 +22,12 @@ add_compile_definitions(_POSIX_C_SOURCE=200809L)
 file(GLOB_RECURSE LIB_SOURCES
     "src/utils/*.c"
     "src/core/*.c"
+    "src/lexer/*.c"
+    "src/parser/*.c"
+    "src/expand/*.c"
     "src/exec/*.c"
     "src/builtin/*.c"
+    "src/prompt/*.c"
     "src/info/*.c"
     "src/scripting/*.c"
 )
@@ -35,20 +39,14 @@ target_include_directories(banglish_lib PUBLIC src)
 # ---- readline (required) ----
 find_library(READLINE_LIB
     NAMES readline
-    HINTS /tmp/readline_dev/usr/lib/x86_64-linux-gnu
-          /usr/lib/x86_64-linux-gnu
-          /usr/lib
     REQUIRED)
 
 find_path(READLINE_INC
     NAMES readline/readline.h
-    HINTS /tmp/readline_dev/usr/include
-          /usr/include
     REQUIRED)
 
 find_library(NCURSES_LIB
     NAMES ncurses tinfo
-    HINTS /usr/lib/x86_64-linux-gnu /usr/lib
     REQUIRED)
 
 message(STATUS "readline: ${READLINE_LIB}")
