@@ -155,6 +155,21 @@ int eval_node(ShellState *sh, AstNode *node) {
     return status;
   }
 
+  /* ---- def: register user function ---- */
+  case NODE_DEF: {
+    if (!sh->funcs)
+      sh->funcs = functable_create();
+    /* Clone the body AST (the original is still owned by the node) */
+    functable_define((FuncTable *)sh->funcs, node->def.name, node->def.params,
+                     node->def.body);
+    /* The functable_define duplicates params but takes body ownership
+       for the STORED entry; we must not free it again from this node.
+       To avoid double-free when ast_free is called on this NODE_DEF,
+       set body to NULL here. The body is now owned by the FuncTable. */
+    node->def.body = NULL;
+    return 0;
+  }
+
   /* ---- let: shell variable assignment ---- */
   case NODE_LET: {
     char *val = expand_variables_only(node->let.value, sh);
